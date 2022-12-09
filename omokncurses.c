@@ -1,8 +1,4 @@
-#include <ncurses.h>
-#include <stdio.h>
-#include <string.h>
-
-char * board[19][20];
+#include "omokncurses.h"
 int winidentifier(void)
 {
 	for(int i = 0; i < 19; i++)
@@ -214,7 +210,7 @@ int chooseModeWindow() {
 		for(int i = 0; i < 3; i++) {
 			if (i == highlight)
 				wattron(menuwin, A_REVERSE);
-			mvwprintw(menuwin, i+myMax/2, (mxMax-strlen(choices[i]))/2, choices[i]);
+			mvwprintw(menuwin, i+myMax/2, (mxMax-strlen(choices[i]))/2, "%s",choices[i]);
 			wattroff(menuwin, A_REVERSE);
 		}
 		choice = wgetch(menuwin);
@@ -242,43 +238,5 @@ int chooseModeWindow() {
 	return highlight;
 }
 
-int main(void)
-{
-	char *user1 = "user1";
-	char *user2 = "user2";
-	char mesg[] = "HELLO OMOK";
-	int yMax, xMax;
-	int c;
-	
-	initscr();
-	getmaxyx(stdscr,yMax,xMax);	
-	attron(A_BOLD | A_BLINK);
-	mvprintw(yMax/2, (xMax-strlen(mesg))/2, "%s", mesg);
-	attroff(A_BLINK);
-	mvprintw(yMax/2+1, (xMax-19)/2, "%s", "Press 's' to Start");
-	
-	cbreak();
-	noecho();
-	keypad(stdscr, TRUE);
-	
- 	while(true){
- 	c = getch();
-		if (c == 's'){
-			attroff(A_BOLD | A_BLINK);
-			int choice = chooseModeWindow();
-			if (choice == 0){
-				omokManager(user1, user2);
-				break;
-			}
-			if(choice == 1){
-				omokManager(user1, user2);
-			} else {
-				break;
-			}
-		} 
-	}
-	endwin();
 
-	return 0;
-}
 	
