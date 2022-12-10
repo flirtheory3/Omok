@@ -1,5 +1,6 @@
 #include "omokncurses.h"
-int winidentifier(void)
+
+int winidentifier(char* board[19][20])
 {
 	for(int i = 0; i < 19; i++)
 		for(int j = 0; j < 19; j++)
@@ -61,9 +62,9 @@ int winidentifier(void)
 	return 0;
 }
 
-void omokManager(char user1[], char user2[])
+int omokManager(char user1[], char user2[],char* board[19][20], char user_id)
 {
-	int count = 0;
+
 	initscr();
 	clear();
 	cbreak();
@@ -77,14 +78,8 @@ void omokManager(char user1[], char user2[])
 	refresh();
 	wrefresh(gamewind);
 	
-	for(int i = 0; i < 19; i++){
-		for(int j = 0; j < 19; j++){
-			board[i][j] = "+";
-		}
-	}
-	
 	int xpos = 3;
-	while(true){
+	
 		for(int i = 0; i < 19; i++){
 			xpos = 3;
 			for(int j = 0; j < 19; j++){
@@ -92,20 +87,20 @@ void omokManager(char user1[], char user2[])
 				xpos += 3;
 			}
 		}
-		int win = winidentifier();
+		int win = winidentifier(board);
 		if(win == 1){ 
 			delwin(gamewind);
 			endwin();
 			printf("%s win!\n",user1);
-			return;
+			return 0;
 		}
 		else if(win == 2){
 			delwin(gamewind);
 			endwin();
 			printf("%s win\n", user2);
-			return;
+			return 0;
 		}
-		if(count % 2 == 0)
+		if(user_id == '1')
 			mvwprintw(gamewind, 25, 10, "%s TURN", user1);
 		else
 			mvwprintw(gamewind, 25, 10, "%s TURN", user2);
@@ -130,24 +125,36 @@ void omokManager(char user1[], char user2[])
 			choice = getch();
 			switch(choice){
 				case KEY_UP:
-					if(highlight / 19 == 0)
+					if(highlight / 19 == 0){
 						highlight = highlight + (18*19);
-					else highlight -= 19;
+					}
+					else {
+						highlight -= 19;
+					}
 					break;
 				case KEY_DOWN:
-					if(highlight / 19 == 18)
+					if(highlight / 19 == 18){
 						highlight = highlight % 19;
-					else highlight += 19;
+					}
+					else {
+						highlight += 19;
+					}
 					break;
 				case KEY_LEFT:
-					if(highlight % 19 == 0)
+					if(highlight % 19 == 0){
 						highlight = highlight + 18;
-					else highlight -= 1;
+					}
+					else {
+						highlight -= 1;
+					}
 					break;
 				case KEY_RIGHT:
-					if(highlight % 19 == 18)
+					if(highlight % 19 == 18){
 						highlight = highlight - 18;
-					else highlight += 1;
+					}
+					else {
+						highlight += 1;
+					}
 					break;
 				defalut:
 					break;
@@ -167,19 +174,24 @@ void omokManager(char user1[], char user2[])
 					mvwprintw(gamewind, 26, 10, "Place already tooked!");
 					continue;
 				}
-				else mvwprintw(gamewind, 26, 10,"                      ");
+				else {
+					mvwprintw(gamewind, 26, 10,"                      ");
+				}
 				
-				if(count % 2 == 0)
+				if(user_id == '1'){
 					board[col][row] = "@";
-				else
+				}
+				else{
 					board[col][row] = "O";
-				count++;
+				}
+				
 				break;
 			}
 		}
-	}
+	
 	getch();
 	endwin();
+	return 2*highlight;
 }
 
 

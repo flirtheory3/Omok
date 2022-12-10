@@ -46,7 +46,7 @@ int semlock(int semid) {
     buf.sem_op = -1;
     buf.sem_flg = SEM_UNDO;
     printf("%d : semlock started\n",getpid());
-    printf("%d : semop : %d\n",getpid(),semop(semid, &buf, 1));
+    
     if (semop(semid, &buf, 1) == -1) {
         perror("semlock failed");
         exit(1);
@@ -68,16 +68,13 @@ int semunlock(int semid) {
     return 0;
 }
 
-void semhandle(int shmid, char* user1, char* user2, char user_id) {
+void semhandle(int semid, int shmid, char* user1, char* user2, char user_id) {
     printf("%d : semhandle entered\n",getpid());
     
-    int semid;
+    
     pid_t pid = getpid();
 	char* board[19][20];
-	if((semid = initsem(1)) < 0){
-		printf("fuck2\n");
-		exit(1);
-	}
+	
 	printf("jj\n");
     semlock(semid);
     printf("kyc\n");
@@ -102,6 +99,9 @@ void semhandle(int shmid, char* user1, char* user2, char user_id) {
 	}
     
     int pos = omokManager(user1, user2, board,user_id);
+    if(pos == 0){
+    	exit(1);
+    }
     shmaddr[pos] = user_id;
     printf("%d : shm : %s\n",getpid(),shmaddr);
     shmdt((char *)shmaddr);
@@ -115,16 +115,16 @@ int main() {
     int status;
     pid_t pid[2] = {-1, -1};
     int cur_child_num = 2;
-    
-    
+    int semid = initsem(1);
+	
     int shmid = shmget(IPC_PRIVATE, 20, IPC_CREAT|0644);
     char* shmaddr = shmat(shmid, (char *)NULL, 0);
     char* init_data = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0";
     strcpy(shmaddr,init_data);
     shmdt((char *)shmaddr);
     //ncurses definition
-    char *user1 = "user1";
-	char *user2 = "user2";
+    char *user1;
+	char *user2;
 	char mesg[] = "HELLO OMOK";
 	int yMax, xMax;
 	int c;
@@ -147,10 +147,25 @@ int main() {
 			attroff(A_BOLD | A_BLINK);
 			int choice = chooseModeWindow();
 			if (choice == 0){
-				
+				user1 = "user1";
+				user2 = "com";
+				int pid = fork();
+				if(pid>0){
+					while(waitpid(pid[0], NULL, WNOHANG) == 0){
+
+									sleep(1);
+					}
+				}
+				else{
+					while(pid==0){
+						semhandle(semid, shmid, user1, user2);
+					}
+				}
 				break;
 			}
 			if(choice == 1){
+				user1 = "user1";
+				user2 = "user2";
 				for (int a = 0; a < 2; a++){
 					printf("cur id : %d\n",getpid());
 					printf("%d : childs : %d %d\n",getpid(),pid[0],pid[1]);
@@ -162,7 +177,7 @@ int main() {
 							printf("%d : process %d forked.\n",getpid(),pid[a]);
 							if(a == 1){
 								while(waitpid(pid[0], NULL, WNOHANG) == 0){
-									printf("fuck\n");
+
 									sleep(1);
 								}
 								
@@ -181,14 +196,14 @@ int main() {
 				}
 				while(pid[0] == 0){
 					
-					semhandle(shmid,user1, user2, '1');
+					semhandle(semid,shmid,user1, user2, '1');
 					
 
 					
 				}
 				while(pid[1] == 0){
 					
-					semhandle(shmid, user1, user2, '2');
+					semhandle(semid,shmid, user1, user2, '2');
 					
 
 				}
