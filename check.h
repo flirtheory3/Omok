@@ -1,7 +1,8 @@
 #pragma once
 
 #include<stdio.h>
+#include<string.h>
 
-int check33(int arr[19][19], int, int, int);
-int check44(int arr[19][19], int, int, int);
-int check(int arr[19][19], int, int, int);
+int check33(char* arr[19][20], char*, int, int);
+int check44(char* arr[19][20], char*, int, int);
+int check(char* arr[19][20], char*, int, int);

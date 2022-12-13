@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "omokncurses.h"
+#include "com.h"
 
 union semun {
     int val;
@@ -67,8 +68,93 @@ int semunlock(int semid) {
     }
     return 0;
 }
+void semhandle_solo(int semid, int shmid, char* user1, char* user2, char* user_id) {
+    printf("%d : semhandle entered\n",getpid());
+    
+    
+    pid_t pid = getpid();
+	char* board[19][20];
+	
+	printf("jj\n");
+    semlock(semid);
+    printf("kyc\n");
+    printf("Lock : Process %d\n", (int)pid);
+    printf("** Lock Mode : Critical Section\n");
+    sleep(1);
+    
+    char* shmaddr = shmat(shmid, (char *)NULL, 0);
+    for(int i = 0; i < 19; i++){
+		for(int j = 0; j < 19; j++){
+			char data = shmaddr[2*(19*i+j)];
+			if(data=='0'){
+				board[i][j] = "+";
+			}
+			else if(data=='1'){
+				board[i][j] = "@";
+			}
+			else if(data == '2'){
+				board[i][j] = "0";
+			}
+		}
+	}
+    
+    int pos = omokManager(user2, user1, board,user_id);
+    if(pos == 0){
+    	exit(1);
+    }
+    shmaddr[pos] = *user_id;
+    printf("%d : shm : %s\n",getpid(),shmaddr);
+    for(int i = 0; i < 19; i++){
+		for(int j = 0; j < 19; j++){
+			char data = shmaddr[2*(19*i+j)];
+			if(data=='0'){
+				board[j][i] = "+";
+			}
+			else if(data=='1'){
+				board[j][i] = "@";
+			}
+			else if(data == '2'){
+				board[j][i] = "0";
+			}
+		}
+	}
+    for(int i=0;i<19;i++){
+    	for(int j=0;j<19;j++){
+    		printf("%s ",board[i][j]);
+    	}
+    	printf("\n");
+    }
+    pos = CHACKSU(user_id,board);
+    
+    printf("chacksu\n");
+    shmaddr[pos] = '1';
+    for(int i = 0; i < 19; i++){
+		for(int j = 0; j < 19; j++){
+			char data = shmaddr[2*(19*i+j)];
+			if(data=='0'){
+				board[i][j] = "+";
+			}
+			else if(data=='1'){
+				board[i][j] = "@";
+			}
+			else if(data == '2'){
+				board[i][j] = "0";
+			}
+		}
+	}
+    for(int i=0;i<19;i++){
+    	for(int j=0;j<19;j++){
+    		printf("%s ",board[i][j]);
+    	}
+    	printf("\n");
+    }
+    shmdt((char *)shmaddr);
+    printf("Unlock : Process %d\n", (int)pid);
+    semunlock(semid);
+    return;
+}
 
-void semhandle(int semid, int shmid, char* user1, char* user2, char user_id) {
+void semhandle(int semid, int shmid, char* user1, char* user2, char* user_id) {
     printf("%d : semhandle entered\n",getpid());
     
     
@@ -102,7 +188,7 @@ void semhandle(int semid, int shmid, char* user1, char* user2, char user_id) {
     if(pos == 0){
     	exit(1);
     }
-    shmaddr[pos] = user_id;
+    shmaddr[pos] = *user_id;
     printf("%d : shm : %s\n",getpid(),shmaddr);
     shmdt((char *)shmaddr);
     printf("Unlock : Process %d\n", (int)pid);
@@ -151,14 +237,14 @@ int main() {
 				user2 = "com";
 				int pid = fork();
 				if(pid>0){
-					while(waitpid(pid[0], NULL, WNOHANG) == 0){
+					while(waitpid(pid, NULL, WNOHANG) == 0){
 
 									sleep(1);
 					}
 				}
 				else{
 					while(pid==0){
-						semhandle(semid, shmid, user1, user2);
+						semhandle_solo(semid, shmid, "user", "com","2");
 					}
 				}
 				break;
@@ -196,14 +282,14 @@ int main() {
 				}
 				while(pid[0] == 0){
 					
-					semhandle(semid,shmid,user1, user2, '1');
+					semhandle(semid,shmid,user1, user2, "1");
 					
 
 					
 				}
 				while(pid[1] == 0){
 					
-					semhandle(semid,shmid, user1, user2, '2');
+					semhandle(semid,shmid, user1, user2, "2");
 					
 
 				}
