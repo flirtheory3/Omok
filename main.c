@@ -68,104 +68,17 @@ int semunlock(int semid) {
     }
     return 0;
 }
-void semhandle_solo(int semid, int shmid, char* user1, char* user2, char* user_id) {
-    printf("%d : semhandle entered\n",getpid());
-    
-    
-    pid_t pid = getpid();
-	char* board[19][20];
-	
-	printf("jj\n");
-    semlock(semid);
-    printf("kyc\n");
-    printf("Lock : Process %d\n", (int)pid);
-    printf("** Lock Mode : Critical Section\n");
-    sleep(1);
-    
-    char* shmaddr = shmat(shmid, (char *)NULL, 0);
-    for(int i = 0; i < 19; i++){
-		for(int j = 0; j < 19; j++){
-			char data = shmaddr[2*(19*i+j)];
-			if(data=='0'){
-				board[i][j] = "+";
-			}
-			else if(data=='1'){
-				board[i][j] = "@";
-			}
-			else if(data == '2'){
-				board[i][j] = "0";
-			}
-		}
-	}
-    
-    int pos = omokManager(user2, user1, board,user_id);
-    if(pos == 0){
-    	exit(1);
-    }
-    shmaddr[pos] = *user_id;
-    printf("%d : shm : %s\n",getpid(),shmaddr);
-    for(int i = 0; i < 19; i++){
-		for(int j = 0; j < 19; j++){
-			char data = shmaddr[2*(19*i+j)];
-			if(data=='0'){
-				board[j][i] = "+";
-			}
-			else if(data=='1'){
-				board[j][i] = "@";
-			}
-			else if(data == '2'){
-				board[j][i] = "0";
-			}
-		}
-	}
-    for(int i=0;i<19;i++){
-    	for(int j=0;j<19;j++){
-    		printf("%s ",board[i][j]);
-    	}
-    	printf("\n");
-    }
-    pos = CHACKSU(user_id,board);
-    
-    printf("chacksu\n");
-    shmaddr[pos] = '1';
-    for(int i = 0; i < 19; i++){
-		for(int j = 0; j < 19; j++){
-			char data = shmaddr[2*(19*i+j)];
-			if(data=='0'){
-				board[i][j] = "+";
-			}
-			else if(data=='1'){
-				board[i][j] = "@";
-			}
-			else if(data == '2'){
-				board[i][j] = "0";
-			}
-		}
-	}
-    for(int i=0;i<19;i++){
-    	for(int j=0;j<19;j++){
-    		printf("%s ",board[i][j]);
-    	}
-    	printf("\n");
-    }
-    shmdt((char *)shmaddr);
-    printf("Unlock : Process %d\n", (int)pid);
-    semunlock(semid);
-    return;
-}
 
 void semhandle(int semid, int shmid, char* user1, char* user2, char* user_id) {
-    printf("%d : semhandle entered\n",getpid());
+    
     
     
     pid_t pid = getpid();
 	char* board[19][20];
 	
-	printf("jj\n");
+	
     semlock(semid);
-    printf("kyc\n");
-    printf("Lock : Process %d\n", (int)pid);
-    printf("** Lock Mode : Critical Section\n");
+    
     sleep(1);
     
     char* shmaddr = shmat(shmid, (char *)NULL, 0);
@@ -186,12 +99,12 @@ void semhandle(int semid, int shmid, char* user1, char* user2, char* user_id) {
     
     int pos = omokManager(user1, user2, board,user_id);
     if(pos == 0){
-    	exit(1);
+    	exit(0);
     }
     shmaddr[pos] = *user_id;
-    printf("%d : shm : %s\n",getpid(),shmaddr);
+    
     shmdt((char *)shmaddr);
-    printf("Unlock : Process %d\n", (int)pid);
+    
     semunlock(semid);
     return;
 }
@@ -214,6 +127,7 @@ int main() {
 	char mesg[] = "HELLO OMOK";
 	int yMax, xMax;
 	int c;
+	
     
     //starting screen
     initscr();
@@ -233,39 +147,28 @@ int main() {
 			attroff(A_BOLD | A_BLINK);
 			int choice = chooseModeWindow();
 			if (choice == 0){
-				user1 = "user1";
-				user2 = "com";
-				int pid = fork();
-				if(pid>0){
-					while(waitpid(pid, NULL, WNOHANG) == 0){
-
-									sleep(1);
-					}
-				}
-				else{
-					while(pid==0){
-						semhandle_solo(semid, shmid, "user", "com","2");
-					}
-				}
+				
 				break;
 			}
 			if(choice == 1){
 				user1 = "user1";
 				user2 = "user2";
 				for (int a = 0; a < 2; a++){
-					printf("cur id : %d\n",getpid());
-					printf("%d : childs : %d %d\n",getpid(),pid[0],pid[1]);
-					printf("%d : a : %d\n",getpid(),a);
+
+
+
 					
 					if(pid[0]!=0 && pid[1]!=0){
 						pid[a] = fork();
 						if(pid[0]!=0 && pid[1]!=0){
-							printf("%d : process %d forked.\n",getpid(),pid[a]);
-							if(a == 1){
-								while(waitpid(pid[0], NULL, WNOHANG) == 0){
 
-									sleep(1);
-								}
+							if(a == 1){
+								wait(&status);
+								kill(pid[0],SIGINT);
+								kill(pid[1],SIGINT);
+								shmctl(shmid, IPC_RMID, (struct shmid_ds *)NULL);
+								
+								exit(0); 
 								
 							}
 						
@@ -278,7 +181,7 @@ int main() {
 					}
 					
 					
-					printf("%d : end for\n",getpid());
+
 				}
 				while(pid[0] == 0){
 					

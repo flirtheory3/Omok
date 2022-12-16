@@ -153,7 +153,7 @@ int omokManager(char user1[], char user2[], char* board[19][20], char* user_id)
 			}
 			break;
 		case 10:
-			printf("%d\n",check(board,user_id, highlight/19, highlight%19));
+
 			wrefresh(gamewind);
 			int col, row;
 			if (highlight / 19 == 0) {
@@ -198,8 +198,8 @@ int omokManager(char user1[], char user2[], char* board[19][20], char* user_id)
 				enter = 0;
 			}
 			
-			char c = 'a';
-			while((c=getch())!=10);
+
+
 			break;
 		default:
 			break;
